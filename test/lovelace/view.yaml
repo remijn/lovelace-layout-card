@@ -23,6 +23,7 @@ views:
       width: 200
       max_cols: 10
       min_height: 1
+      first_card_span: -2
     cards: !include card-list.yaml
   - title: rtl
     type: custom:masonry-layout

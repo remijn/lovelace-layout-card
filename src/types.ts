@@ -51,6 +51,7 @@ export interface ColumnViewConfig extends ViewConfig {
     min_height?: number;
     rtl?: boolean;
     card_margin?: string;
+    first_card_span?: number;
   };
 }
 

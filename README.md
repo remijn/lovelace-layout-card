@@ -151,9 +151,10 @@ The masonry layout immitates the default layout of lovelace.
 
 The masonry layout accepts the following `layout` options (besides the ones mentioned above):
 
-| Option       | Values | Description                                                                       | Default |
-| ------------ | ------ | --------------------------------------------------------------------------------- | ------- |
-| `min_height` | number | Minimum number of card height units in a column before the next one is considered | 5       |
+| Option            | Values | Description                                                                       | Default |
+| ----------------- | ------ | --------------------------------------------------------------------------------- | ------- |
+| `min_height`      | number | Minimum number of card height units in a column before the next one is considered | 5       |
+| `first_card_span` | number | Grow the first card to span multiple columns                                      | 5       |
 
 ### Horizontal layout
 

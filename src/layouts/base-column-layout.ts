@@ -171,12 +171,6 @@ export class BaseColumnLayout extends BaseLayout {
     }
     if (!this._columns) return;
     let cols = [];
-    for (let i = 0; i < this._columns; i++) {
-      const newCol = document.createElement("div") as any;
-      newCol.classList.add("column");
-      newCol.length = 0;
-      cols.push(newCol);
-    }
 
     let cards: CardConfigGroup[] = this.cards.map((card, index) => {
       const config = this._config.cards[index];
@@ -187,10 +181,58 @@ export class BaseColumnLayout extends BaseLayout {
         show: this._shouldShow(card, config, index),
       };
     });
+
+    // Get span from config and ajust for column count
+    let firstCardSpan = this._config.layout?.first_card_span ?? 1;
+    if (firstCardSpan > this._columns) {
+      firstCardSpan = this._columns;
+    }
+    // Ajust for a negative offset
+    if (firstCardSpan < 0) {
+      firstCardSpan = Math.max(this._columns + firstCardSpan, 1);
+    }
+
+    let firstCardSize = 0;
+    let firstCardRow;
+    if (firstCardSpan != 1) {
+      // Check if we need to ajust the first card size
+      firstCardRow = document.createElement("div") as any;
+      firstCardRow.classList.add("column", "firstCard");
+      firstCardRow.style.gridColumn = "1 / span " + firstCardSpan; //Add grid-column style to span
+
+      const firstCard = cards.shift(); //Remove the first card from the normal card list
+
+      firstCardRow.appendChild(this.getCardElement(firstCard)); // Put the card in our own 'column'
+
+      firstCardSize = firstCard.card.getCardSize
+        ? await (Promise.race([
+            firstCard.card.getCardSize(),
+            new Promise((resolve) => setTimeout(() => resolve(1), 500)),
+          ]) as Promise<number>)
+        : 1;
+
+      firstCardRow.length = firstCardSize;
+    }
+
+    for (let i = 0; i < this._columns; i++) {
+      const newCol = document.createElement("div") as any;
+      newCol.classList.add("column");
+
+      newCol.length = 0;
+      if (firstCardSpan > i && firstCardSpan > 1) {
+        newCol.classList.add("offset"); // Add offset class to start on the second grid-row
+        newCol.length = firstCardSize; // Set col length to be offset by the first card, this fixes the ordering
+      }
+
+      cols.push(newCol);
+    }
+
     await this._placeColumnCards(
       cols,
       cards.filter((c) => this.lovelace?.editMode || c.show)
     );
+
+    if (firstCardRow) cols.unshift(firstCardRow); // Add the first row as the first 'column'
 
     cols = cols.filter((c) => c.childElementCount > 0);
     if (this._config.layout?.rtl) {
@@ -239,6 +281,7 @@ export class BaseColumnLayout extends BaseLayout {
             var(--column-max-width)
           );
           grid-template-columns: var(--column-widths);
+          grid-template-rows: auto 1fr;
           justify-content: center;
           justify-items: center;
           margin: var(--layout-margin);
@@ -247,10 +290,35 @@ export class BaseColumnLayout extends BaseLayout {
           overflow-y: var(--layout-overflow);
         }
         .column {
-          grid-row: 1/2;
+          grid-row: 1/3;
           max-width: var(--column-max-width);
           width: 100%;
         }
+
+        .column.offset {
+          grid-row: 2/3;
+        }
+
+        .column.offset > *:first-child {
+          margin-top: 0px;
+        }
+
+        .column.firstCard {
+          grid-row: 1/2;
+          max-width: unset;
+          width: 100%;
+        }
+
+        .column.firstCard > * {
+          height: calc(100% - var(--card-margin) * 2);
+          margin: var(--card-margin);
+        }
+        @media (max-width: 500px) {
+          .column.firstCard > * {
+            margin-right: 0;
+          }
+        }
+
         .column > * {
           display: block;
           margin: var(--card-margin);
